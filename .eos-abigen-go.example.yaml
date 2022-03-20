@@ -2,4 +2,4 @@ generate:
   folder: generated
   contracts:
     - file: eosio.json
-      name: eosio123
+      name_override: eosio123

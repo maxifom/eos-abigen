@@ -11,8 +11,8 @@ import (
 )
 
 type ContractConfig struct {
-	File         string `json:"file" yaml:"file"`
-	NameOverride string `json:"name_override" yaml:"name_override"`
+	File         string `json:"file" yaml:"file" mapstructure:"file"`
+	NameOverride string `json:"name_override" yaml:"name_override" mapstructure:"name_override"`
 }
 
 var generateCmd = &cobra.Command{
