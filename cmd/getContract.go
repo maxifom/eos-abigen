@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/maxifom/eos-abigen-go/pkg/client"
+	"github.com/maxifom/eos-abigen/pkg/client"
 	"github.com/spf13/cobra"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/maxifom/eos-abigen-go/pkg/commands/generate"
+	"github.com/maxifom/eos-abigen/pkg/commands/generate"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,7 +18,7 @@ type ContractConfig struct {
 var generateCmd = &cobra.Command{
 	Use:   "generate [flags] [abi_file]",
 	Short: "Generate client and table structures from ABI contract file",
-	Long:  "Generate client and table structures from ABI contract file. \nYou can also provide .eos-abigen-go.yaml file to generate multiple contracts with one command",
+	Long:  "Generate client and table structures from ABI contract file. \nYou can also provide .eos-abigen.yaml file to generate multiple contracts with one command",
 	Args: func(cmd *cobra.Command, args []string) error {
 		var contracts []ContractConfig
 		viper.UnmarshalKey("generate.contracts", &contracts)
@@ -46,7 +46,7 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 		if !exists {
-			return fmt.Errorf("file %s does not exist. \nYou can use eos-abigen-go get-contract %s command to download it", args[0], args[0])
+			return fmt.Errorf("file %s does not exist. \nYou can use eos-abigen get-contract %s command to download it", args[0], args[0])
 		}
 
 		return nil

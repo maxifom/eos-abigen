@@ -1,4 +1,4 @@
-module github.com/maxifom/eos-abigen-go
+module github.com/maxifom/eos-abigen
 
 go 1.17
 

@@ -15,7 +15,7 @@ var VERSION = "0.0.1"
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "eos-abigen-go",
+	Use:   "eos-abigen",
 	Short: "CLI for generating RPC Client and Tables structures to read contracts on EOS-like blockchains",
 }
 
@@ -31,7 +31,7 @@ func init() {
 	rootCmd.DisableAutoGenTag = true
 	rootCmd.SilenceUsage = true
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .eos-abigen-go.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .eos-abigen.yaml)")
 }
 
 func initConfig() {
@@ -41,7 +41,7 @@ func initConfig() {
 	} else {
 		viper.AddConfigPath(".")
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".eos-abigen-go")
+		viper.SetConfigName(".eos-abigen")
 	}
 
 	viper.AutomaticEnv()

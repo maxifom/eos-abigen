@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/maxifom/eos-abigen-go/pkg/base"
+	"github.com/maxifom/eos-abigen/pkg/base"
 )
 
 type AccountResponse struct {
