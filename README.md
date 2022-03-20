@@ -1,26 +1,26 @@
-# eos-abigen-go
+# eos-abigen
 
 CLI for generating RPC Client and Tables structures to read contracts on EOS-like blockchains
 
 ## Installing
 ```shell
-go install github.com/maxifom/eos-abigen-go@latest
+go install github.com/maxifom/eos-abigen@latest
 ```
 
 
 ### Global Options
 
 ```
-      --config string   config file (default is .eos-abigen-go.yaml)
-  -h, --help            help for eos-abigen-go
+      --config string   config file (default is .eos-abigen.yaml)
+  -h, --help            help for eos-abigen
 ```
 
 ## Generate command
 Generate client and table structures from ABI contract file.
-You can also provide .eos-abigen-go.yaml file to generate multiple contracts with one command
+You can also provide .eos-abigen.yaml file to generate multiple contracts with one command
 
 ```
-eos-abigen-go generate [flags] [abi_file]
+eos-abigen generate [flags] [abi_file]
 ```
 
 ### Options
@@ -34,7 +34,7 @@ eos-abigen-go generate [flags] [abi_file]
 ### Options inherited from parent commands
 
 ```
-      --config string   config file (default is .eos-abigen-go.yaml)
+      --config string   config file (default is .eos-abigen.yaml)
 ```
 
 ## Get contract command
@@ -42,7 +42,7 @@ eos-abigen-go generate [flags] [abi_file]
 Downloads contract ABI from specified RPC
 
 ```
-eos-abigen-go get-contract [flags] [...contract_names]
+eos-abigen get-contract [flags] [...contract_names]
 ```
 
 ### Options
