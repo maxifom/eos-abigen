@@ -4,7 +4,7 @@ CLI for generating RPC Client and Tables structures to read contracts on EOS-lik
 
 ## Installing
 ```shell
-    go install github.com/maxifom/eos-abigen-go@latest
+go install github.com/maxifom/eos-abigen-go@latest
 ```
 
 
