@@ -1,0 +1,5 @@
+generate:
+  folder: generated
+  contracts:
+    - file: eosio.json
+      name: eosio123
