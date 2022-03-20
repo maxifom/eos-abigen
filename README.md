@@ -15,8 +15,8 @@ go install github.com/maxifom/eos-abigen@latest
   -h, --help            help for eos-abigen
 ```
 
-## Generate command
-Generate client and table structures from ABI contract file.
+## Generate Golang command
+Generate client and table structures from ABI contract file for Golang.
 You can also provide .eos-abigen.yaml file to generate multiple contracts with one command
 
 ```
@@ -36,6 +36,24 @@ eos-abigen generate [flags] [abi_file]
 ```
       --config string   config file (default is .eos-abigen.yaml)
 ```
+
+## Generate Typescript command
+
+Generates client and table structures from ABI contract file for Typescript.
+You can also provide .eos-abigen.yaml file to generate multiple contracts with one command
+
+```
+eos-abigen generate-ts [flags] [abi_file]
+```
+
+### Options
+
+```
+  -c, --contract_name_override string   contract name to use in calls to RPC. (default abi filename without extension)
+  -f, --folder string                   folder for generated files output (default "generated")
+  -h, --help                            help for generate-ts
+```
+
 
 ## Get contract command
 
