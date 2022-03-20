@@ -1,24 +1,17 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"os"
 
-	"github.com/maxifom/eos-abigen/pkg/commands/generate"
+	"github.com/maxifom/eos-abigen/pkg/commands/generate-ts"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-type ContractConfig struct {
-	File         string `json:"file" yaml:"file" mapstructure:"file"`
-	NameOverride string `json:"name_override" yaml:"name_override" mapstructure:"name_override"`
-}
-
-var generateCmd = &cobra.Command{
-	Use:   "generate [flags] [abi_file]",
-	Short: "Generates client and table structures from ABI contract file for Golang",
-	Long:  "Generates client and table structures from ABI contract file for Golang. \nYou can also provide .eos-abigen.yaml file to generate multiple contracts with one command",
+var generateTsCmd = &cobra.Command{
+	Use:   "generate-ts [flags] [abi_file]",
+	Short: "Generates client and table structures from ABI contract file for Typescript",
+	Long:  "Generates client and table structures from ABI contract file for Typescript. \nYou can also provide .eos-abigen.yaml file to generate multiple contracts with one command",
 	Args: func(cmd *cobra.Command, args []string) error {
 		var contracts []ContractConfig
 		viper.UnmarshalKey("generate.contracts", &contracts)
@@ -98,22 +91,11 @@ var generateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(generateCmd)
-	generateCmd.Flags().StringP("contract_name_override", "c", "", "contract name to use in calls to RPC. (default abi filename without extension)")
-	generateCmd.Flags().StringP("folder", "f", "generated", "folder for generated files output")
-	err := viper.BindPFlag("generate.folder", generateCmd.Flags().Lookup("folder"))
+	rootCmd.AddCommand(generateTsCmd)
+	generateTsCmd.Flags().StringP("contract_name_override", "c", "", "contract name to use in calls to RPC. (default abi filename without extension)")
+	generateTsCmd.Flags().StringP("folder", "f", "generated", "folder for generated files output")
+	err := viper.BindPFlag("generate.folder", generateTsCmd.Flags().Lookup("folder"))
 	if err != nil {
 		panic(err)
 	}
-}
-
-func fileExists(name string) (bool, error) {
-	_, err := os.Stat(name)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	return false, err
 }

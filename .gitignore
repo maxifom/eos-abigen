@@ -2,3 +2,4 @@
 /vendor
 /generated
 /contracts
+.eos-abigen.yaml
