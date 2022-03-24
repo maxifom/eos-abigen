@@ -25,6 +25,57 @@ export type GetTableRowsParams = Partial<{
     show_payer: boolean
 }>
 
+export class Symbol {
+	raw: string;
+	precision: number;
+	symbol_code: string;
+
+	public constructor(raw: string) {
+		this.raw = raw;
+		const [precision, symbol_code] = raw.split(",", 2)
+		this.precision = Number.parseInt(precision);
+		this.symbol_code = symbol_code;
+	}
+}
+
+export class Asset {
+	raw: string;
+	raw_quantity: string;
+	quantity: number;
+	precision: number;
+	symbol_code: string;
+
+	public constructor(raw: string) {
+		this.raw = raw;
+		const [quantity, symbol_code] = raw.split(" ", 2);
+		this.raw_quantity = quantity;
+		this.precision = 0;
+		const splitted = quantity.split(".");
+		if (splitted.length > 1) {
+			this.precision = splitted[1].length;
+		}
+		
+		this.quantity = Number.parseFloat(quantity);
+		this.symbol_code = symbol_code;
+	}
+}
+
+export type ExtendedAssetType = {
+	quantity: string
+	contract: string
+}
+
+export class ExtendedAsset {
+	asset: Asset;
+	contract: string;
+
+	public constructor(raw: ExtendedAssetType) {
+		this.asset = new Asset(raw.quantity);
+		this.contract = raw.contract;
+	}
+}
+
+
 {{ if ne .StructTypes nil }} {{ .StructTypes }} {{ end }}
 {{ if ne .RowTypes nil }} {{ .RowTypes }} {{ end }}
 `)

@@ -17,7 +17,7 @@ export class Client {
     public async {{.MethodName}}(params?: types.GetTableRowsParams): Promise<types.{{.ReturnName}}> {
         let lower_bound = params?.lower_bound || params?.bounds || undefined;
         let upper_bound = params?.upper_bound || params?.bounds || undefined;
-        return await this.rpc.get_table_rows({
+		let result: types.{{.ReturnName}}Interm = await this.rpc.get_table_rows({
             json: true,
             code: params?.code || types.CONTRACT_NAME,
             scope: params?.scope || types.CONTRACT_NAME,
@@ -29,7 +29,37 @@ export class Client {
             limit: params?.limit,
             reverse: params?.reverse,
             show_payer: params?.show_payer,
+        });
+
+		let real_result: types.{{.ReturnName}} = {
+			more: result.more,
+			next_key: result.next_key,
+			rows: [],
+		};
+
+		real_result.rows = result.rows.map(function (r) {
+            let row = {
+				{{ range .Struct.Fields }}{{ .Name }}: {{ if ne .ArraysCount 0 }} [] {{else}}{{ if ne .Func "" }}{{.Func}}(r.{{.Name}}){{else}}r.{{.Name}}{{end}}{{ if ne .Method "" }}.{{.Method}}(){{end}}{{end}},
+				{{ end }}
+			};
+			
+			// TODO: nested array
+			// {{ range .Struct.Fields }}
+			// 	{{ if eq .ArraysCount 1 }} 
+			// 		let {{.Name}}: {{if ne .FullType ""}} {{ .FullType }} {{ else }}{{.Type}}{{end}} = [];
+			// 		{{ $field := . }}
+			// 		{{ range $i, $a := .ArraysCountIterator }} 
+			// 			for (let i{{$i}} = 0; i{{$i}} < r.{{$field.Name}}.length; i{{$i}} ++ ) {
+			// 				{{$field.Name}}[i{{$i}}] = {{ if ne $field.Func "" }}{{$field.Func}}(r.{{$field.Name}}[i{{$i}}]){{else}}r.{{$field.Name}}[i{{$i}}]{{end}}{{ if ne $field.Method "" }}.{{$field.Method}}(){{end}};
+			// 			}
+			// 		{{end}}
+			// 	{{end}}
+			// {{ end }}
+
+            return row;
         })
+
+		return real_result;
     }
     {{end}}
 }

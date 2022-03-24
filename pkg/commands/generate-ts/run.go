@@ -72,10 +72,16 @@ func Run(opts Opts) error {
 	return gen(abi, contractName, realContractName, opts.GeneratedFolder, opts.Version, t)
 }
 
+type Struct struct {
+	Name   string
+	Fields []Field
+}
+
 type Method struct {
 	MethodName string
 	TableName  string
 	ReturnName string
+	Struct     Struct
 }
 
 func gen(abi abitypes.ABI, contractName string, realContractName string, generatedFolder string, version string, t *template.Template) error {
@@ -104,23 +110,6 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 		return err
 	}
 
-	var methods []Method
-	for _, t := range abi.Tables {
-		methods = append(methods, Method{
-			MethodName: strings.ReplaceAll(strcase.LowerCamelCase(t.Name), ".", ""),
-			TableName:  t.Name,
-			ReturnName: strcase.UpperCamelCase(t.Type) + "Rows",
-		})
-	}
-
-	err = t.ExecuteTemplate(clientF, "client", map[string]interface{}{
-		"Version": version,
-		"Methods": methods,
-	})
-	if err != nil {
-		return err
-	}
-
 	var rowTypes strings.Builder
 	var structTypes strings.Builder
 	declaredRowsNames := map[string]struct{}{}
@@ -139,7 +128,13 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 	}
 
 	ss := genStructs(abi, getNewTypesMap(abi), getNewStructsMap(abi))
+	structMap := map[string]Struct{}
 	for _, s := range ss {
+		structMap[s.Name] = Struct{
+			Name:   s.Name,
+			Fields: s.Fields,
+		}
+
 		err = t.ExecuteTemplate(&structTypes, "struct", map[string]interface{}{
 			"Name":   s.Name,
 			"Fields": s.Fields,
@@ -151,6 +146,24 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 		"ContractName": realContractName,
 		"RowTypes":     rowTypes.String(),
 		"StructTypes":  structTypes.String(),
+	})
+	if err != nil {
+		return err
+	}
+
+	var methods []Method
+	for _, t := range abi.Tables {
+		methods = append(methods, Method{
+			MethodName: strings.ReplaceAll(strcase.LowerCamelCase(t.Name), ".", ""),
+			TableName:  t.Name,
+			ReturnName: strcase.UpperCamelCase(t.Type) + "Rows",
+			Struct:     structMap[strcase.UpperCamelCase(t.Type)],
+		})
+	}
+
+	err = t.ExecuteTemplate(clientF, "client", map[string]interface{}{
+		"Version": version,
+		"Methods": methods,
 	})
 	if err != nil {
 		return err
@@ -178,7 +191,11 @@ func getNewStructsMap(abi abitypes.ABI) map[string]string {
 }
 
 type LanguageFieldMapping struct {
-	Type string
+	Type             string
+	Func             string
+	Method           string
+	IntermediateType string
+	FullType         string
 }
 
 var DefaultTSCaseFunc = strcase.UpperCamelCase
@@ -186,7 +203,9 @@ var DefaultTSCaseFunc = strcase.UpperCamelCase
 var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	"bool": {
 		"ts": {
-			Type: "boolean",
+			Type:             "boolean",
+			IntermediateType: "number",
+			Func:             "!!",
 		},
 	},
 	"int8": {
@@ -231,37 +250,43 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	},
 	"int64": {
 		"ts": {
-			Type: "number",
+			Type:   "string",
+			Method: "toString",
 		},
 	},
 	"uint64": {
 		"ts": {
-			Type: "number",
+			Type:   "string",
+			Method: "toString",
 		},
 	},
 	"int128": {
 		"ts": {
-			Type: "number",
+			Type: "string",
 		},
 	},
 	"uint128": {
 		"ts": {
-			Type: "number",
+			Type: "string",
 		},
 	},
 	"float32": {
 		"ts": {
-			Type: "number",
+			Type:             "number",
+			Func:             "Number.parseFloat",
+			IntermediateType: "string",
 		},
 	},
 	"float64": {
 		"ts": {
-			Type: "number",
+			Type:             "number",
+			Func:             "Number.parseFloat",
+			IntermediateType: "string",
 		},
 	},
 	"float128": {
 		"ts": {
-			Type: "number",
+			Type: "string",
 		},
 	},
 	"time_point": {
@@ -321,7 +346,10 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	},
 	"symbol": {
 		"ts": {
-			Type: "string",
+			Type:             "Symbol",
+			Func:             "new types.Symbol",
+			FullType:         "types.Symbol",
+			IntermediateType: "string",
 		},
 	},
 	"symbol_code": {
@@ -331,19 +359,31 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	},
 	"asset": {
 		"ts": {
-			Type: "string",
+			Type:             "Asset",
+			Func:             "new types.Asset",
+			IntermediateType: "string",
+			FullType:         "types.Asset",
 		},
 	},
 	"extended_asset": {
 		"ts": {
-			Type: "string",
+			Type:             "ExtendedAsset",
+			Func:             "new types.ExtendedAsset",
+			IntermediateType: "ExtendedAssetType",
+			FullType:         "types.ExtendedAsset",
 		},
 	},
 }
 
 type Field struct {
-	Name string
-	Type string
+	Name                string
+	Type                string
+	FullType            string
+	IntermediateType    string
+	Func                string
+	Method              string
+	ArraysCount         int64
+	ArraysCountIterator []int
 }
 
 type S struct {
@@ -361,7 +401,12 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 		for _, field := range abiStruct.Fields {
 			fieldName := strings.ToLower(field.Name)
 			fieldType := field.Type
-			listsSuffix := strings.Repeat("[]", strings.Count(fieldType, "[]"))
+			arraysCount := strings.Count(fieldType, "[]")
+			var aci []int
+			for i := 0; i < arraysCount; i++ {
+				aci = append(aci, i)
+			}
+			listsSuffix := strings.Repeat("[]", arraysCount)
 			fieldType = strings.ReplaceAll(fieldType, "[]", "")
 			if realFieldType, ok := newTypesMap[fieldType]; ok {
 				fieldType = realFieldType
@@ -369,21 +414,55 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 
 			if fMapping, ok := LanguageMapping[fieldType]["ts"]; ok {
 				realType := fMapping.Type + listsSuffix
+				intermediateType := ""
+				if fMapping.IntermediateType != "" {
+					intermediateType = fMapping.IntermediateType + listsSuffix
+				}
+
 				s.Fields = append(s.Fields, Field{
-					Name: fieldName,
-					Type: realType,
+					Name:                fieldName,
+					Type:                realType,
+					IntermediateType:    intermediateType,
+					Func:                fMapping.Func,
+					Method:              fMapping.Method,
+					ArraysCount:         int64(arraysCount),
+					ArraysCountIterator: aci,
+					FullType:            fMapping.FullType + listsSuffix,
 				})
 			} else {
 				if structName, ok := newStructsMap[fieldType]; ok {
 					realType := structName + listsSuffix
-					s.Fields = append(s.Fields, Field{
-						Name: fieldName,
-						Type: realType,
-					})
+
+					if fmapping, ok := LanguageMapping[structName]["ts"]; ok {
+						intermediateType := ""
+						if fMapping.IntermediateType != "" {
+							intermediateType = fMapping.IntermediateType + listsSuffix
+						}
+						s.Fields = append(s.Fields, Field{
+							Name:                fieldName,
+							Type:                realType,
+							IntermediateType:    intermediateType,
+							Func:                fmapping.Func,
+							Method:              fMapping.Method,
+							ArraysCount:         int64(arraysCount),
+							ArraysCountIterator: aci,
+							FullType:            fMapping.FullType + listsSuffix,
+						})
+					} else {
+						s.Fields = append(s.Fields, Field{
+							Name:                fieldName,
+							Type:                realType,
+							ArraysCount:         int64(arraysCount),
+							ArraysCountIterator: aci,
+						})
+					}
+
 				} else {
 					s.Fields = append(s.Fields, Field{
-						Name: fieldName,
-						Type: "unknown",
+						Name:                fieldName,
+						Type:                "unknown" + listsSuffix,
+						ArraysCount:         int64(arraysCount),
+						ArraysCountIterator: aci,
 					})
 				}
 			}
