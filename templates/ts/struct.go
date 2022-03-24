@@ -8,7 +8,7 @@ var StructTemplate = strings.TrimSpace(`export type {{.Name}} = {
 };
 export type {{.Name}}Interm = {
     {{ range .Fields }}{{.Name}}: 	{{ if ne .IntermediateType "" }}{{.IntermediateType}}{{else}}{{.Type}}{{end}}
-    {{end-}}
+    {{end}}
 };
 
 `)
