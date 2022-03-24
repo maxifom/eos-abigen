@@ -1,0 +1,105 @@
+[
+  {
+    "user": "alltypesproj",
+    // name
+    "b": 1,
+    // bool
+    "i8": 127,
+    // int8
+    "ui8": 255,
+    // uint8
+    "i16": 32767,
+    // int16
+    "ui16": 65535,
+    // uint16
+    "i32": 2147483647,
+    // int32
+    "ui32": 4294967295,
+    // uint32
+    "vi32": 123123,
+    // varint32
+    "vui32": 123123,
+    // varuint32
+    "i64": "9223372036854775807",
+    // int64
+    "ui64": "18446744073709551615",
+    // uint64
+    "i128": "170141183460469231731687303715884105727",
+    // int128
+    "u128": "340282366920938463463374607431768211455",
+    // uint128
+    "f32": "1123123.12500000000000000",
+    // float32
+    "f64": "123312312.31231200695037842",
+    // float64
+    "f128": "0x401677c4f83f0b2c72be7d428fb65ab4",
+    // float128
+    "tp": "2001-01-01T00:00:00.000",
+    // time_point
+    "tps": "2001-01-01T00:00:00",
+    // time_point_sec
+    "btt": "2001-01-01T00:00:00.000",
+    // block_timestamp_type
+    "n": "alltypesproj",
+    // name
+    "byt": "aaaaaa",
+    // bytes
+    "s": "asdljkasdl",
+    // string
+    "c160": "ffffffffffffffffffffffffffffffffffffffff",
+    // checksum160
+    "c256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    // checksum256
+    "c512": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    // checksum512
+    "pk": "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+    // public key
+    "symb": "8,WAX",
+    // symbol
+    "symb_code": "WAX",
+    // symbol code
+    "a": "1.00000000 WAX",
+    // asset
+    "ea": {
+      // extended_asset
+      "quantity": "1.00000000 WAX",
+      "contract": "eosio.token"
+    }
+  },
+  {
+    user: 'alltypesproj',
+    b: 1,
+    i8: 127,
+    ui8: 255,
+    i16: 32767,
+    ui16: 65535,
+    i32: 2147483647,
+    ui32: 4294967295,
+    i64: 1,
+    ui64: 1,
+    i128: '1',
+    u128: '1',
+    f32: '1.00000000000000000',
+    f64: '1.00000000000000000',
+    f128: '0x401677c4f83f0b2c72be7d428fb65ab4',
+    tp: '2001-01-01T00:00:00.000',
+    tps: '2001-01-01T00:00:00',
+    btt: '2001-01-01T00:00:00.000',
+    n: 'alltypesproj',
+    byt: 'aaaaaa',
+    s: 'asdljkasdl',
+    c160: 'ffffffffffffffffffffffffffffffffffffffff',
+    c256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+    c512: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+    pk: 'EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV',
+    symb: '8,WAX',
+    symb_code: 'WAX',
+    a: '1.00000000 WAX',
+    ea: {
+      quantity: '1.00000000 WAX',
+      contract: 'eosio.token'
+    }
+  }
+]
+
+
