@@ -13,8 +13,6 @@ archives:
       darwin: macos
       linux: linux
       windows: windows
-      386: 32_bit
-      amd64: 64_bit
     format: 'binary'
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 checksum:
