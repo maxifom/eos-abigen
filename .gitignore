@@ -3,3 +3,5 @@
 /generated
 /contracts
 .eos-abigen.yaml
+
+dist/
