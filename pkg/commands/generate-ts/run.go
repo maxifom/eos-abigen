@@ -70,8 +70,11 @@ func Run(opts Opts) error {
 	if err != nil {
 		return err
 	}
-
 	t, err = t.New("nested").Parse(ts.NestedArrayTemplate)
+	if err != nil {
+		return err
+	}
+	t, err = t.New("action_builder").Parse(ts.ActionBuilderTemplate)
 	if err != nil {
 		return err
 	}
@@ -118,6 +121,11 @@ type Method struct {
 	Struct     Struct
 }
 
+type Action struct {
+	Name       string
+	ParamsName string
+}
+
 func gen(abi abitypes.ABI, contractName string, realContractName string, generatedFolder string, version string, t *template.Template) error {
 	typesF, err := os.Create(filepath.Join(generatedFolder, contractName, "types.ts"))
 	if err != nil {
@@ -136,6 +144,12 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 		return err
 	}
 	defer clientF.Close()
+
+	actionBuilderF, err := os.Create(filepath.Join(generatedFolder, contractName, "action_builder.ts"))
+	if err != nil {
+		return err
+	}
+	defer actionBuilderF.Close()
 
 	err = t.ExecuteTemplate(indexF, "index", map[string]interface{}{
 		"Version": version,
@@ -199,6 +213,22 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 	err = t.ExecuteTemplate(clientF, "client", map[string]interface{}{
 		"Version": version,
 		"Methods": methods,
+	})
+	if err != nil {
+		return err
+	}
+
+	var actions []Action
+	for _, action := range abi.Actions {
+		actions = append(actions, Action{
+			Name:       action.Name,
+			ParamsName: strcase.UpperCamelCase(action.Type),
+		})
+	}
+
+	err = t.ExecuteTemplate(actionBuilderF, "action_builder", map[string]interface{}{
+		"Version": version,
+		"Actions": actions,
 	})
 	if err != nil {
 		return err

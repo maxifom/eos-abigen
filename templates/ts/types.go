@@ -8,8 +8,16 @@ import {JsonRpc} from "eosjs";
 
 export const CONTRACT_NAME = "{{.ContractName}}";
 
-export interface ClientOpts {
-    rpc: JsonRpc;
+export type Authorization = {
+	actor: string;
+	permission: string;
+}
+
+export type Action = {
+	account: string;
+	name: string;
+	authorization: Authorization[];
+	data: object;
 }
 
 export type GetTableRowsParams = Partial<{
