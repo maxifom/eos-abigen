@@ -21,7 +21,36 @@ type Opts struct {
 }
 
 func Run(opts Opts) error {
-	t, err := template.New("client").Parse(ts.ClientTemplate)
+	type StructForNestedArray struct {
+		F Field
+		I int
+	}
+
+	t, err := template.New("client").Funcs(map[string]any{
+		"genStructForNestedArray": func(i int, f Field) StructForNestedArray {
+			return StructForNestedArray{
+				F: f,
+				I: i,
+			}
+		},
+		"generateTabs": func(count int) string {
+			return strings.Repeat("\t", count)
+		},
+		"sub": func(i int, sub int) int {
+			return i - sub
+		},
+		"generateIBrackets": func(count int) string {
+			if count == 0 {
+				return ""
+			}
+
+			var s strings.Builder
+			for i := 0; i < count; i++ {
+				fmt.Fprintf(&s, "[i%d]", i)
+			}
+			return s.String()
+		},
+	}).Parse(ts.ClientTemplate)
 	if err != nil {
 		return err
 	}
@@ -38,6 +67,11 @@ func Run(opts Opts) error {
 		return err
 	}
 	t, err = t.New("types").Parse(ts.TypesTemplate)
+	if err != nil {
+		return err
+	}
+
+	t, err = t.New("nested").Parse(ts.NestedArrayTemplate)
 	if err != nil {
 		return err
 	}
@@ -129,7 +163,7 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 
 	ss := genStructs(abi, getNewTypesMap(abi), getNewStructsMap(abi))
 	structMap := map[string]Struct{}
-	for _, s := range ss {
+	for i, s := range ss {
 		structMap[s.Name] = Struct{
 			Name:   s.Name,
 			Fields: s.Fields,
@@ -138,6 +172,7 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 		err = t.ExecuteTemplate(&structTypes, "struct", map[string]interface{}{
 			"Name":   s.Name,
 			"Fields": s.Fields,
+			"IsLast": i == len(ss)-1,
 		})
 	}
 
@@ -382,13 +417,47 @@ type Field struct {
 	IntermediateType    string
 	Func                string
 	Method              string
-	ArraysCount         int64
+	ArraysCount         int
 	ArraysCountIterator []int
 }
 
 type S struct {
 	Name   string
 	Fields []Field
+}
+
+func (f Field) FormatNameValue(obj string) string {
+	if f.ArraysCount > 0 {
+		return "[]"
+	}
+
+	if obj == "" {
+		var s strings.Builder
+		if f.Func != "" {
+			fmt.Fprintf(&s, "%s(%s)", f.Func, f.Name)
+		} else {
+			fmt.Fprintf(&s, "%s", f.Name)
+		}
+
+		if f.Method != "" {
+			fmt.Fprintf(&s, ".%s()", f.Method)
+		}
+
+		return s.String()
+	}
+
+	var s strings.Builder
+	if f.Func != "" {
+		fmt.Fprintf(&s, "%s(%s.%s)", f.Func, obj, f.Name)
+	} else {
+		fmt.Fprintf(&s, "%s.%s", obj, f.Name)
+	}
+
+	if f.Method != "" {
+		fmt.Fprintf(&s, ".%s()", f.Method)
+	}
+
+	return s.String()
 }
 
 func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap map[string]string) []S {
@@ -425,7 +494,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 					IntermediateType:    intermediateType,
 					Func:                fMapping.Func,
 					Method:              fMapping.Method,
-					ArraysCount:         int64(arraysCount),
+					ArraysCount:         arraysCount,
 					ArraysCountIterator: aci,
 					FullType:            fMapping.FullType + listsSuffix,
 				})
@@ -444,7 +513,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							IntermediateType:    intermediateType,
 							Func:                fmapping.Func,
 							Method:              fMapping.Method,
-							ArraysCount:         int64(arraysCount),
+							ArraysCount:         arraysCount,
 							ArraysCountIterator: aci,
 							FullType:            fMapping.FullType + listsSuffix,
 						})
@@ -452,7 +521,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 						s.Fields = append(s.Fields, Field{
 							Name:                fieldName,
 							Type:                realType,
-							ArraysCount:         int64(arraysCount),
+							ArraysCount:         arraysCount,
 							ArraysCountIterator: aci,
 						})
 					}
@@ -461,7 +530,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 					s.Fields = append(s.Fields, Field{
 						Name:                fieldName,
 						Type:                "unknown" + listsSuffix,
-						ArraysCount:         int64(arraysCount),
+						ArraysCount:         arraysCount,
 						ArraysCountIterator: aci,
 					})
 				}

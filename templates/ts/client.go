@@ -39,22 +39,23 @@ export class Client {
 
 		real_result.rows = result.rows.map(function (r) {
             let row = {
-				{{ range .Struct.Fields }}{{ .Name }}: {{ if ne .ArraysCount 0 }} [] {{else}}{{ if ne .Func "" }}{{.Func}}(r.{{.Name}}){{else}}r.{{.Name}}{{end}}{{ if ne .Method "" }}.{{.Method}}(){{end}}{{end}},
-				{{ end }}
+				{{$lenFields := len .Struct.Fields -}}
+				{{ range $i, $f := .Struct.Fields -}}
+					{{- $f.Name}}: {{ $f.FormatNameValue "r" }} 
+				{{- if (lt $i (sub $lenFields 1))}},{{end}}
+{{ if (lt $i (sub $lenFields 1))}}				{{else}}			{{end}}{{end -}}
 			};
 			
-			// TODO: nested array
-			// {{ range .Struct.Fields }}
-			// 	{{ if eq .ArraysCount 1 }} 
-			// 		let {{.Name}}: {{if ne .FullType ""}} {{ .FullType }} {{ else }}{{.Type}}{{end}} = [];
-			// 		{{ $field := . }}
-			// 		{{ range $i, $a := .ArraysCountIterator }} 
-			// 			for (let i{{$i}} = 0; i{{$i}} < r.{{$field.Name}}.length; i{{$i}} ++ ) {
-			// 				{{$field.Name}}[i{{$i}}] = {{ if ne $field.Func "" }}{{$field.Func}}(r.{{$field.Name}}[i{{$i}}]){{else}}r.{{$field.Name}}[i{{$i}}]{{end}}{{ if ne $field.Method "" }}.{{$field.Method}}(){{end}};
-			// 			}
-			// 		{{end}}
-			// 	{{end}}
-			// {{ end }}
+			{{- range .Struct.Fields -}}
+			{{- if gt .ArraysCount 0}} 
+
+			// Mapping for {{ .Name }} field 
+			{
+					{{- template "nested" (genStructForNestedArray 0 .)}}
+				row.{{.Name}} = arr0;
+			}
+			 	{{- end -}}
+			{{- end}}
 
             return row;
         })

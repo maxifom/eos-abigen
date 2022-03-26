@@ -1,14 +1,14 @@
 package ts
 
-import "strings"
-
-var StructTemplate = strings.TrimSpace(`export type {{.Name}} = {
-    {{ range .Fields }}{{.Name}}: {{.Type}}
-    {{end}}
+var StructTemplate = `
+export type {{.Name}} = {
+	{{$lenFields := len .Fields -}}
+	{{ range $i, $f := .Fields -}}{{$f.Name}}: {{$f.Type}}
+{{if (lt $i (sub $lenFields 1))}}	{{end}}{{end -}}
 };
+
 export type {{.Name}}Interm = {
-    {{ range .Fields }}{{.Name}}: 	{{ if ne .IntermediateType "" }}{{.IntermediateType}}{{else}}{{.Type}}{{end}}
-    {{end}}
+	{{ range $i, $f := .Fields -}}{{$f.Name}}: {{ if ne $f.IntermediateType "" }}{{$f.IntermediateType}}{{else}}{{$f.Type}}{{end}}
+{{if (lt $i (sub $lenFields 1))}}	{{end}}{{end -}}
 };
-
-`)
+`

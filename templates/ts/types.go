@@ -74,8 +74,6 @@ export class ExtendedAsset {
 		this.contract = raw.contract;
 	}
 }
-
-
-{{ if ne .StructTypes nil }} {{ .StructTypes }} {{ end }}
-{{ if ne .RowTypes nil }} {{ .RowTypes }} {{ end }}
+{{ if ne .StructTypes nil }}{{ .StructTypes }}{{ end }}
+{{ if ne .RowTypes nil }}{{ .RowTypes }}{{ end }}
 `)
