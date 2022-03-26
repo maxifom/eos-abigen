@@ -1,6 +1,6 @@
 module github.com/maxifom/eos-abigen
 
-go 1.17
+go 1.18
 
 require (
 	github.com/dave/jennifer v1.5.0
@@ -14,7 +14,6 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/jessevdk/go-flags v1.5.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
