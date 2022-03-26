@@ -26,7 +26,9 @@ export class ActionBuilder {
     }
 
     build(): types.Action[] {
-        return this.actions;
+		let actions = this.actions;
+		this.actions = [];
+        return actions;
     }
 
 	{{range $i, $a := .Actions -}}
