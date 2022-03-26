@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var VERSION = "0.0.6"
+var VERSION = "0.0.9"
 
 var cfgFile string
 
