@@ -12,7 +12,7 @@ export interface ActionBuilderOpts {
 }
 
 export class ActionBuilder {
-    private readonly actions: types.Action[];
+    private actions: types.Action[];
     private readonly defaultAuthorization?: Authorization;
 
     constructor(opts?: ActionBuilderOpts) {
