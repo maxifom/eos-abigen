@@ -70,3 +70,6 @@ eos-abigen get-contract [flags] [...contract_names]
   -o, --output string    Folder to output contract ABI to (default "contracts")
   -u, --rpc_url string   RPC URL to download ABI file from (default "https://eos.greymass.com")
 ```
+
+TODO:
+1. Map fields from custom structs in array to correct type
