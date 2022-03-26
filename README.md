@@ -72,4 +72,4 @@ eos-abigen get-contract [flags] [...contract_names]
 ```
 
 TODO:
-1. Map fields from custom structs in array to correct type
+1. Map fields from custom structs to correct type
