@@ -7,10 +7,14 @@ var ClientTemplate = strings.TrimSpace(`
 import {JsonRpc} from "eosjs";
 import * as types from "./types";
 
-export class Client {
+export interface ClientOpts {
     rpc: JsonRpc;
+}
 
-    public constructor(opts: types.ClientOpts) {
+export class Client {
+    private readonly rpc: JsonRpc;
+
+    public constructor(opts: ClientOpts) {
         this.rpc = opts.rpc;
     }
     {{ range .Methods }}
@@ -52,6 +56,7 @@ export class Client {
 			// Mapping for {{ .Name }} field 
 			{
 					{{- template "nested" (genStructForNestedArray 0 .)}}
+				// @ts-ignore
 				row.{{.Name}} = arr0;
 			}
 			 	{{- end -}}
