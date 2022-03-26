@@ -7,10 +7,10 @@ var NestedArrayTemplate = strings.TrimSpace(`
 {{ generateTabs (sub .I -4)}}// @ts-ignore 
 {{ generateTabs (sub .I -4)}}let arr{{.I}} = [];
 {{ generateTabs (sub .I -4)}}// @ts-ignore 
-{{ generateTabs (sub .I -4)}}for (let i{{.I}} = 0; i{{.I}} < row.{{.F.Name}}{{generateIBrackets .I}}.length; i{{.I}}++) {
+{{ generateTabs (sub .I -4)}}for (let i{{.I}} = 0; i{{.I}} < r.{{.F.Name}}{{generateIBrackets .I}}.length; i{{.I}}++) {
 			{{- if eq .I (sub .F.ArraysCount 1) }}
 {{ generateTabs (sub .I -5)}}// @ts-ignore
-{{ generateTabs (sub .I -5)}}arr{{.I}}.push({{.F.Func}}{{if ne .F.Func ""}}({{end}}row.{{.F.Name}}{{generateIBrackets (sub .I -1)}}{{if ne .F.Func ""}}){{end}}{{ if ne .F.Method ""}}.{{.F.Method}}(){{end}})
+{{ generateTabs (sub .I -5)}}arr{{.I}}.push({{.F.Func}}{{if ne .F.Func ""}}({{end}}r.{{.F.Name}}{{generateIBrackets (sub .I -1)}}{{if ne .F.Func ""}}){{end}}{{ if ne .F.Method ""}}.{{.F.Method}}(){{end}})
 			{{- else -}}
 			{{- template "nested" (genStructForNestedArray (sub .I -1) .F) -}}
 			{{- end }}
