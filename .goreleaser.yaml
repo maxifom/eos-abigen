@@ -10,14 +10,16 @@ builds:
       - darwin
 archives:
   - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+      darwin: macos
+      linux: linux
+      windows: windows
+      386: 32_bit
+      amd64: 64_bit
     format: 'binary'
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 checksum:
   name_template: 'checksums.txt'
+  disable: true
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 changelog:
@@ -26,4 +28,4 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-      - '^Merge:'
+      - '^Merge pull request'
