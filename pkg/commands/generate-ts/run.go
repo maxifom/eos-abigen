@@ -9,8 +9,8 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-
 	"github.com/maxifom/eos-abigen/pkg/abitypes"
+
 	"github.com/maxifom/eos-abigen/templates/ts"
 	"github.com/stoewer/go-strcase"
 )
