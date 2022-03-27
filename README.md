@@ -1,72 +1,80 @@
 # eos-abigen
 
-CLI for generating RPC Client and Tables structures to read contracts on EOS-like blockchains
+CLI for generating type-safe clients for EOS-compatible contracts.
+
+## Features
+
+**Golang**:
+
+* Struct generation and Client generation for read-access get_table_rows with sensible defaults
+* Utility classes for Asset, ExtendedAsset, Symbol, time structs
+* Support for nested arrays and structs
+
+**Typescript**:
+
+* Struct generation and client generation for read-access using get_table_rows with sensible defaults
+* Action builder
+* Utility classes for Asset, ExtendedAsset, Symbol, time structs
+* Support for nested arrays and structs
 
 ## Installing
+
+MacOS Intel:
+
+```shell
+wget https://github.com/maxifom/eos-abigen/releases/latest/download/eos-abigen_macos_amd64
+mv eos-abigen_macos_amd64 eos-abigen
+chmod +x eos-abigen
+```
+
+MacOS M1:
+
+```shell
+wget https://github.com/maxifom/eos-abigen/releases/latest/download/eos-abigen_macos_arm64
+mv eos-abigen_macos_arm64 eos-abigen
+chmod +x eos-abigen
+```
+
+Linux:
+
+```shell
+wget https://github.com/maxifom/eos-abigen/releases/latest/download/eos-abigen_linux_amd64
+mv eos-abigen_linux_amd64 eos-abigen
+chmod +x eos-abigen
+```
+
+Windows:
+
+```shell
+Download https://github.com/maxifom/eos-abigen/releases/latest/download/eos-abigen_windows_amd64.exe
+```
+
+Or install using go install:
 
 ```shell
 go install github.com/maxifom/eos-abigen@latest
 ```
 
-### Global Options
+## Getting started
 
-```
-      --config string   config file (default is .eos-abigen.yaml)
-  -h, --help            help for eos-abigen
-```
+To get started you need a ABI JSON file for the contract. You can download it
+using `eos-abigen get-contract <CONTRACT_NAME>` command. Note that default is `https://eos.greymass.com`, if you need
+another chain specify RPC Node URL using `-u` param.
 
-## Generate Golang command
+After you have downloaded contract, generate code using `eos-abigen generate <ABI_JSON_PATH>` for Golang
+and `eos-abigen generate-ts <ABI_JSON_PATH>` for Typescript.
 
-Generate client and table structures from ABI contract file for Golang. You can also provide .eos-abigen.yaml file to
-generate multiple contracts with one command
+Also you can provide `.eos-abigen.yaml` config file and invoke generation using `eos-abigen generate`
+or `eos-abigen generate-ts` without arguments
 
-```
-eos-abigen generate [flags] [abi_file]
-```
+Example .eos-abigen.yaml:
 
-### Options
-
-```
-  -c, --contract_name_override string   contract name to use in calls to RPC. (default abi filename without extension)
-  -f, --folder string                   folder for generated files output (default "generated")
-  -h, --help                            help for generate
-```
-
-### Options inherited from parent commands
-
-```
-      --config string   config file (default is .eos-abigen.yaml)
-```
-
-## Generate Typescript command
-
-Generates client and table structures from ABI contract file for Typescript. You can also provide .eos-abigen.yaml file
-to generate multiple contracts with one command
-
-```
-eos-abigen generate-ts [flags] [abi_file]
-```
-
-### Options
-
-```
-  -c, --contract_name_override string   contract name to use in calls to RPC. (default abi filename without extension)
-  -f, --folder string                   folder for generated files output (default "generated")
-  -h, --help                            help for generate-ts
-```
-
-## Get contract command
-
-Downloads contract ABI from specified RPC
-
-```
-eos-abigen get-contract [flags] [...contract_names]
-```
-
-### Options
-
-```
-  -h, --help             help for get-contract
-  -o, --output string    Folder to output contract ABI to (default "contracts")
-  -u, --rpc_url string   RPC URL to download ABI file from (default "https://eos.greymass.com")
+```yaml
+generate:
+  folder: generated # Folder to which save generated code from current dir
+  contracts:
+    - file: ./contracts/eosio.json # Path to ABI JSON file
+      name_override: eosio123 # Contract name override, it will be used for get_table_rows and Action builder
+    - file: /some/folder/contracts/eosio.json
+      name_override: eosio123
 ```
