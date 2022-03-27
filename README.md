@@ -3,10 +3,10 @@
 CLI for generating RPC Client and Tables structures to read contracts on EOS-like blockchains
 
 ## Installing
+
 ```shell
 go install github.com/maxifom/eos-abigen@latest
 ```
-
 
 ### Global Options
 
@@ -16,8 +16,9 @@ go install github.com/maxifom/eos-abigen@latest
 ```
 
 ## Generate Golang command
-Generate client and table structures from ABI contract file for Golang.
-You can also provide .eos-abigen.yaml file to generate multiple contracts with one command
+
+Generate client and table structures from ABI contract file for Golang. You can also provide .eos-abigen.yaml file to
+generate multiple contracts with one command
 
 ```
 eos-abigen generate [flags] [abi_file]
@@ -39,8 +40,8 @@ eos-abigen generate [flags] [abi_file]
 
 ## Generate Typescript command
 
-Generates client and table structures from ABI contract file for Typescript.
-You can also provide .eos-abigen.yaml file to generate multiple contracts with one command
+Generates client and table structures from ABI contract file for Typescript. You can also provide .eos-abigen.yaml file
+to generate multiple contracts with one command
 
 ```
 eos-abigen generate-ts [flags] [abi_file]
@@ -53,7 +54,6 @@ eos-abigen generate-ts [flags] [abi_file]
   -f, --folder string                   folder for generated files output (default "generated")
   -h, --help                            help for generate-ts
 ```
-
 
 ## Get contract command
 
@@ -70,6 +70,3 @@ eos-abigen get-contract [flags] [...contract_names]
   -o, --output string    Folder to output contract ABI to (default "contracts")
   -u, --rpc_url string   RPC URL to download ABI file from (default "https://eos.greymass.com")
 ```
-
-TODO:
-1. Map fields from custom structs to correct type

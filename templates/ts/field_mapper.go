@@ -1,0 +1,25 @@
+package ts
+
+import "strings"
+
+var MapFieldTemplate = strings.TrimSpace(`
+{{ define "fieldmapper" }}
+{{- if .F.GenerateMapper -}} 
+{{generateTabs .Tabs }}{{- .F.Name}}: {{ template "arraywrapper" (dict "F" .F "I" 0 "UseFullTypes" .UseFullTypes) }},
+{{ else -}}
+{{generateTabs .Tabs }}{{- .F.Name}}: {{ .F.FormatNameValue "r" .UseFullTypes }},
+{{ end -}}
+{{ end }}
+
+{{- define "arraywrapper" -}}
+{{- if eq .I 0 -}}
+	r.{{.F.Name}}.map({{- template "arraywrapper" (dict "I" (add .I 1) "F" .F "UseFullTypes" .UseFullTypes) -}})
+{{- else -}}
+{{- if eq .I .F.ArraysCount -}}
+	n => {{ .F.FormatArrayValue "n" .UseFullTypes }}
+{{- else -}}
+a{{.I}} => a{{.I}}.map({{ template "arraywrapper" (dict "I" (add .I 1) "F" .F "UseFullTypes" .UseFullTypes) -}})
+{{- end -}}
+{{- end -}}
+{{- end -}}
+`)

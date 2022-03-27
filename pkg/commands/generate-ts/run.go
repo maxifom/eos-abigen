@@ -8,6 +8,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
+
 	"github.com/maxifom/eos-abigen/pkg/abitypes"
 	"github.com/maxifom/eos-abigen/templates/ts"
 	"github.com/stoewer/go-strcase"
@@ -39,7 +41,22 @@ func Run(opts Opts) error {
 		ArrayType string
 	}
 
-	t, err := template.New("client").Funcs(map[string]any{
+	type StructForFieldMapper struct {
+		F            Field
+		IsLast       bool
+		UseFullTypes bool
+		Tabs         int
+	}
+
+	t, err := template.New("client").Funcs(sprig.TxtFuncMap()).Funcs(map[string]any{
+		"genStructForFieldMapper": func(f Field, isLast bool, useFullTypes bool, tabs int) StructForFieldMapper {
+			return StructForFieldMapper{
+				F:            f,
+				IsLast:       isLast,
+				UseFullTypes: useFullTypes,
+				Tabs:         tabs,
+			}
+		},
 		"genStructForNestedArray": func(i int, f Field) StructForNestedArray {
 			array := StructForNestedArray{
 				F: f,
@@ -68,23 +85,7 @@ func Run(opts Opts) error {
 		"generatePush": func(f Field, i int, obj string) string {
 			var s string
 			if f.Func != "" {
-				if f.IntermediateType != "" {
-					if f.IntermediateFullType != "" {
-						intermediateFullType := f.IntermediateFullType
-						for j := 0; j < i+1; j++ {
-							intermediateFullType = string([]rune(intermediateFullType)[:len([]rune(intermediateFullType))-2])
-						}
-						s = fmt.Sprintf("%s(%s.%s%s as %s)", f.Func, obj, f.Name, generateIBrackets(i+1), intermediateFullType)
-					} else {
-						intermediateType := f.IntermediateType
-						for j := 0; j < i+1; j++ {
-							intermediateType = string([]rune(intermediateType)[:len([]rune(intermediateType))-2])
-						}
-						s = fmt.Sprintf("%s(%s.%s%s as %s)", f.Func, obj, f.Name, generateIBrackets(i+1), intermediateType)
-					}
-				} else {
-					s = fmt.Sprintf("%s(%s.%s%s)", f.Func, obj, f.Name, generateIBrackets(i+1))
-				}
+				s = fmt.Sprintf("%s(%s.%s%s)", f.Func, obj, f.Name, generateIBrackets(i+1))
 			} else {
 				s = fmt.Sprintf("%s.%s%s", obj, f.Name, generateIBrackets(i+1))
 			}
@@ -115,11 +116,11 @@ func Run(opts Opts) error {
 	if err != nil {
 		return err
 	}
-	t, err = t.New("nested").Parse(ts.NestedArrayTemplate)
+	t, err = t.New("action_builder").Parse(ts.ActionBuilderTemplate)
 	if err != nil {
 		return err
 	}
-	t, err = t.New("action_builder").Parse(ts.ActionBuilderTemplate)
+	t, err = t.New("map_field").Parse(ts.MapFieldTemplate)
 	if err != nil {
 		return err
 	}
@@ -223,7 +224,7 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 
 	ss := genStructs(abi, getNewTypesMap(abi), getNewStructsMap(abi))
 	structMap := map[string]Struct{}
-	for i, s := range ss {
+	for _, s := range ss {
 		structMap[s.Name] = Struct{
 			Name:   s.Name,
 			Fields: s.Fields,
@@ -232,7 +233,6 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 		err = t.ExecuteTemplate(&structTypes, "struct", map[string]interface{}{
 			"Name":   s.Name,
 			"Fields": s.Fields,
-			"IsLast": i == len(ss)-1,
 		})
 	}
 
@@ -504,7 +504,7 @@ type Field struct {
 	Func                 string
 	Method               string
 	ArraysCount          int
-	IsCustom             bool
+	IsStruct             bool
 	GenerateMapper       bool
 }
 
@@ -513,7 +513,29 @@ type S struct {
 	Fields []Field
 }
 
-func (f Field) FormatNameValue(obj string) string {
+func (f Field) FormatArrayValue(n string, useFullType bool) string {
+	var s strings.Builder
+	if f.Func != "" {
+		name := n
+		fmt.Fprintf(&s, "%s(%s)", f.Func, name)
+	} else {
+		fmt.Fprintf(&s, "%s", n)
+	}
+
+	if f.Method != "" {
+		fmt.Fprintf(&s, ".%s()", f.Method)
+	}
+
+	ss := s.String()
+	if !useFullType {
+		ss = strings.ReplaceAll(ss, "types.", "")
+	}
+
+	return ss
+
+}
+
+func (f Field) FormatNameValue(obj string, useFullType bool) string {
 	if f.GenerateMapper && f.ArraysCount > 0 {
 		return "[]"
 	}
@@ -521,15 +543,7 @@ func (f Field) FormatNameValue(obj string) string {
 	if obj == "" {
 		var s strings.Builder
 		if f.Func != "" {
-			name := f.Name
-			if f.IntermediateType != "" {
-				if f.IntermediateFullType != "" {
-					name = fmt.Sprintf("(%s) as %s", f.Name, f.IntermediateFullType)
-				} else {
-					name = fmt.Sprintf("(%s) as %s", f.Name, f.IntermediateType)
-				}
-			}
-			fmt.Fprintf(&s, "%s(%s)", f.Func, name)
+			fmt.Fprintf(&s, "%s(%s)", f.Func, f.Name)
 		} else {
 			fmt.Fprintf(&s, "%s", f.Name)
 		}
@@ -543,15 +557,7 @@ func (f Field) FormatNameValue(obj string) string {
 
 	var s strings.Builder
 	if f.Func != "" {
-		if f.IntermediateType != "" {
-			if f.IntermediateFullType != "" {
-				fmt.Fprintf(&s, "%s(%s.%s as %s)", f.Func, obj, f.Name, f.IntermediateFullType)
-			} else {
-				fmt.Fprintf(&s, "%s(%s.%s as %s)", f.Func, obj, f.Name, f.IntermediateType)
-			}
-		} else {
-			fmt.Fprintf(&s, "%s(%s.%s)", f.Func, obj, f.Name)
-		}
+		fmt.Fprintf(&s, "%s(%s.%s)", f.Func, obj, f.Name)
 	} else {
 		fmt.Fprintf(&s, "%s.%s", obj, f.Name)
 	}
@@ -560,7 +566,12 @@ func (f Field) FormatNameValue(obj string) string {
 		fmt.Fprintf(&s, ".%s()", f.Method)
 	}
 
-	return s.String()
+	ss := s.String()
+	if !useFullType {
+		ss = strings.ReplaceAll(ss, "types.", "")
+	}
+
+	return ss
 }
 
 func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap map[string]string) []S {
@@ -601,7 +612,12 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 				}
 
 				if fMapping.RawType != "" {
-					rawType = fMapping.RawType + listsSuffix
+					splitted := strings.Split(fMapping.RawType, "|")
+					var rawTypes []string
+					for _, s := range splitted {
+						rawTypes = append(rawTypes, strings.TrimSpace(s)+listsSuffix)
+					}
+					rawType = strings.Join(rawTypes, " | ")
 				}
 
 				s.Fields = append(s.Fields, Field{
@@ -617,8 +633,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 				})
 			} else {
 				if structName, ok := newStructsMap[fieldType]; ok {
-					// For custom struct use "Raw" for correct typing
-					realType := structName + "Raw" + listsSuffix
+					realType := structName + listsSuffix
 
 					if fmapping, ok := LanguageMapping[structName]["ts"]; ok {
 						intermediateType := ""
@@ -631,7 +646,12 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							intermediateFullType = fMapping.IntermediateFullType + listsSuffix
 						}
 						if fMapping.RawType != "" {
-							rawType = fMapping.RawType + listsSuffix
+							splitted := strings.Split(fmapping.RawType, "|")
+							var rawTypes []string
+							for _, s := range splitted {
+								rawTypes = append(rawTypes, strings.TrimSpace(s)+listsSuffix)
+							}
+							rawType = strings.Join(rawTypes, " | ")
 						}
 
 						s.Fields = append(s.Fields, Field{
@@ -644,7 +664,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							Func:                 fmapping.Func,
 							Method:               fMapping.Method,
 							ArraysCount:          arraysCount,
-							IsCustom:             true,
+							IsStruct:             true,
 						})
 					} else {
 						s.Fields = append(s.Fields, Field{
@@ -652,7 +672,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							Type:        realType,
 							FullType:    "types." + realType,
 							ArraysCount: arraysCount,
-							IsCustom:    true,
+							IsStruct:    true,
 						})
 					}
 
@@ -670,8 +690,20 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 	}
 
 	for i := range ss {
-		for j, f := range ss[i].Fields {
-			ss[i].Fields[j].GenerateMapper = f.ArraysCount > 0 && (f.Func != "" || f.Method != "" || f.IntermediateType != "" || f.IsCustom)
+		for j := range ss[i].Fields {
+			if ss[i].Fields[j].IsStruct {
+				ss[i].Fields[j].Func = fmt.Sprintf("types.map%s", strcase.UpperCamelCase(strings.ReplaceAll(ss[i].Fields[j].Type, "[]", "")))
+				ss[i].Fields[j].IntermediateType = strcase.UpperCamelCase(strings.ReplaceAll(ss[i].Fields[j].Type, "[]", "")) + "Interm" + strings.Repeat("[]", ss[i].Fields[j].ArraysCount)
+				if ss[i].Fields[j].IntermediateFullType != "" {
+					ss[i].Fields[j].IntermediateFullType = strcase.UpperCamelCase(strings.ReplaceAll(ss[i].Fields[j].IntermediateFullType, "[]", "")) + "Interm" + strings.Repeat("[]", ss[i].Fields[j].ArraysCount)
+				} else {
+					ss[i].Fields[j].IntermediateFullType = "types." + strcase.UpperCamelCase(strings.ReplaceAll(ss[i].Fields[j].IntermediateType, "[]", "")) + strings.Repeat("[]", ss[i].Fields[j].ArraysCount)
+				}
+			}
+
+			generateMapper := ss[i].Fields[j].ArraysCount > 0 && (ss[i].Fields[j].Func != "" || ss[i].Fields[j].Method != "" || ss[i].Fields[j].IntermediateType != "")
+
+			ss[i].Fields[j].GenerateMapper = generateMapper
 		}
 	}
 

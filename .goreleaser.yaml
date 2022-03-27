@@ -8,6 +8,8 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - "-s -w -X cmd/root.Version={{.Version}}"
 archives:
   - replacements:
       darwin: macos
