@@ -18,10 +18,10 @@ export class Client {
         this.rpc = opts.rpc;
     }
     {{ range .Methods }}
-    public async {{.MethodName}}(params?: types.GetTableRowsParams): Promise<types.{{.ReturnName}}> {
+    public async {{.MethodName}}(params?: types.GetTableRowsParams): Promise<types.{{.ReturnNameRows}}> {
         let lower_bound = params?.lower_bound || params?.bounds || undefined;
         let upper_bound = params?.upper_bound || params?.bounds || undefined;
-		let result: types.{{.ReturnName}}Interm = await this.rpc.get_table_rows({
+		let result: types.{{.ReturnNameRows}}Interm = await this.rpc.get_table_rows({
             json: true,
             code: params?.code || types.CONTRACT_NAME,
             scope: params?.scope || types.CONTRACT_NAME,
@@ -35,14 +35,14 @@ export class Client {
             show_payer: params?.show_payer,
         });
 
-		let real_result: types.{{.ReturnName}} = {
+		let real_result: types.{{.ReturnNameRows}} = {
 			more: result.more,
 			next_key: result.next_key,
 			rows: [],
 		};
 
 		real_result.rows = result.rows.map(function (r) {
-            let row = {
+            let row: types.{{ .ReturnName }} = {
 				{{$lenFields := len .Struct.Fields -}}
 				{{ range $i, $f := .Struct.Fields -}}
 					{{- $f.Name}}: {{ $f.FormatNameValue "r" }} 
@@ -51,12 +51,11 @@ export class Client {
 			};
 			
 			{{- range .Struct.Fields -}}
-			{{- if gt .ArraysCount 0}} 
+			{{- if .GenerateMapper }} 
 
 			// Mapping for {{ .Name }} field 
 			{
 					{{- template "nested" (genStructForNestedArray 0 .)}}
-				// @ts-ignore
 				row.{{.Name}} = arr0;
 			}
 			 	{{- end -}}

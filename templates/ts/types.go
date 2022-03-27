@@ -34,9 +34,9 @@ export type GetTableRowsParams = Partial<{
 }>
 
 export class Symbol {
-	raw: string;
-	precision: number;
-	symbol_code: string;
+	readonly raw: string;
+	readonly precision: number;
+	readonly symbol_code: string;
 
 	public constructor(raw: string) {
 		this.raw = raw;
@@ -47,11 +47,11 @@ export class Symbol {
 }
 
 export class Asset {
-	raw: string;
-	raw_quantity: string;
-	quantity: number;
-	precision: number;
-	symbol_code: string;
+	readonly raw: string;
+	readonly raw_quantity: string;
+	readonly quantity: number;
+	readonly precision: number;
+	readonly symbol_code: string;
 
 	public constructor(raw: string) {
 		this.raw = raw;
@@ -74,8 +74,8 @@ export type ExtendedAssetType = {
 }
 
 export class ExtendedAsset {
-	asset: Asset;
-	contract: string;
+	readonly asset: Asset;
+	readonly contract: string;
 
 	public constructor(raw: ExtendedAssetType) {
 		this.asset = new Asset(raw.quantity);

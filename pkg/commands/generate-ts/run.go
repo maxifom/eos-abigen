@@ -20,18 +20,43 @@ type Opts struct {
 	Version              string
 }
 
+func generateIBrackets(count int) string {
+	if count == 0 {
+		return ""
+	}
+
+	var s strings.Builder
+	for i := 0; i < count; i++ {
+		fmt.Fprintf(&s, "[i%d]", i)
+	}
+	return s.String()
+}
+
 func Run(opts Opts) error {
 	type StructForNestedArray struct {
-		F Field
-		I int
+		F         Field
+		I         int
+		ArrayType string
 	}
 
 	t, err := template.New("client").Funcs(map[string]any{
 		"genStructForNestedArray": func(i int, f Field) StructForNestedArray {
-			return StructForNestedArray{
+			array := StructForNestedArray{
 				F: f,
 				I: i,
 			}
+
+			if f.FullType != "" {
+				array.ArrayType = f.FullType
+			} else {
+				array.ArrayType = f.Type
+			}
+
+			for j := 0; j < i; j++ {
+				array.ArrayType = string([]rune(array.ArrayType)[:len([]rune(array.ArrayType))-2])
+			}
+
+			return array
 		},
 		"generateTabs": func(count int) string {
 			return strings.Repeat("\t", count)
@@ -39,16 +64,36 @@ func Run(opts Opts) error {
 		"sub": func(i int, sub int) int {
 			return i - sub
 		},
-		"generateIBrackets": func(count int) string {
-			if count == 0 {
-				return ""
+		"generateIBrackets": generateIBrackets,
+		"generatePush": func(f Field, i int, obj string) string {
+			var s string
+			if f.Func != "" {
+				if f.IntermediateType != "" {
+					if f.IntermediateFullType != "" {
+						intermediateFullType := f.IntermediateFullType
+						for j := 0; j < i+1; j++ {
+							intermediateFullType = string([]rune(intermediateFullType)[:len([]rune(intermediateFullType))-2])
+						}
+						s = fmt.Sprintf("%s(%s.%s%s as %s)", f.Func, obj, f.Name, generateIBrackets(i+1), intermediateFullType)
+					} else {
+						intermediateType := f.IntermediateType
+						for j := 0; j < i+1; j++ {
+							intermediateType = string([]rune(intermediateType)[:len([]rune(intermediateType))-2])
+						}
+						s = fmt.Sprintf("%s(%s.%s%s as %s)", f.Func, obj, f.Name, generateIBrackets(i+1), intermediateType)
+					}
+				} else {
+					s = fmt.Sprintf("%s(%s.%s%s)", f.Func, obj, f.Name, generateIBrackets(i+1))
+				}
+			} else {
+				s = fmt.Sprintf("%s.%s%s", obj, f.Name, generateIBrackets(i+1))
 			}
 
-			var s strings.Builder
-			for i := 0; i < count; i++ {
-				fmt.Fprintf(&s, "[i%d]", i)
+			if f.Method != "" {
+				s = fmt.Sprintf("%s.%s()", s, f.Method)
 			}
-			return s.String()
+
+			return s
 		},
 	}).Parse(ts.ClientTemplate)
 	if err != nil {
@@ -115,10 +160,11 @@ type Struct struct {
 }
 
 type Method struct {
-	MethodName string
-	TableName  string
-	ReturnName string
-	Struct     Struct
+	MethodName     string
+	TableName      string
+	ReturnName     string
+	Struct         Struct
+	ReturnNameRows string
 }
 
 type Action struct {
@@ -203,10 +249,11 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 	var methods []Method
 	for _, t := range abi.Tables {
 		methods = append(methods, Method{
-			MethodName: strings.ReplaceAll(strcase.LowerCamelCase(t.Name), ".", ""),
-			TableName:  t.Name,
-			ReturnName: strcase.UpperCamelCase(t.Type) + "Rows",
-			Struct:     structMap[strcase.UpperCamelCase(t.Type)],
+			MethodName:     strings.ReplaceAll(strcase.LowerCamelCase(t.Name), ".", ""),
+			TableName:      t.Name,
+			ReturnNameRows: strcase.UpperCamelCase(t.Type) + "Rows",
+			ReturnName:     strcase.UpperCamelCase(t.Type),
+			Struct:         structMap[strcase.UpperCamelCase(t.Type)],
 		})
 	}
 
@@ -256,11 +303,13 @@ func getNewStructsMap(abi abitypes.ABI) map[string]string {
 }
 
 type LanguageFieldMapping struct {
-	Type             string
-	Func             string
-	Method           string
-	IntermediateType string
-	FullType         string
+	Type                 string
+	Func                 string
+	Method               string
+	IntermediateType     string
+	IntermediateFullType string
+	FullType             string
+	RawType              string
 }
 
 var DefaultTSCaseFunc = strcase.UpperCamelCase
@@ -315,14 +364,18 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	},
 	"int64": {
 		"ts": {
-			Type:   "string",
-			Method: "toString",
+			Type:             "string",
+			IntermediateType: "number",
+			Method:           "toString",
+			RawType:          "string | number",
 		},
 	},
 	"uint64": {
 		"ts": {
-			Type:   "string",
-			Method: "toString",
+			Type:             "string",
+			IntermediateType: "number",
+			Method:           "toString",
+			RawType:          "string | number",
 		},
 	},
 	"int128": {
@@ -432,23 +485,27 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 	},
 	"extended_asset": {
 		"ts": {
-			Type:             "ExtendedAsset",
-			Func:             "new types.ExtendedAsset",
-			IntermediateType: "ExtendedAssetType",
-			FullType:         "types.ExtendedAsset",
+			Type:                 "ExtendedAsset",
+			Func:                 "new types.ExtendedAsset",
+			IntermediateType:     "ExtendedAssetType",
+			FullType:             "types.ExtendedAsset",
+			IntermediateFullType: "types.ExtendedAssetType",
 		},
 	},
 }
 
 type Field struct {
-	Name                string
-	Type                string
-	FullType            string
-	IntermediateType    string
-	Func                string
-	Method              string
-	ArraysCount         int
-	ArraysCountIterator []int
+	Name                 string
+	Type                 string
+	FullType             string
+	IntermediateType     string
+	IntermediateFullType string
+	RawType              string
+	Func                 string
+	Method               string
+	ArraysCount          int
+	IsCustom             bool
+	GenerateMapper       bool
 }
 
 type S struct {
@@ -457,14 +514,22 @@ type S struct {
 }
 
 func (f Field) FormatNameValue(obj string) string {
-	if f.ArraysCount > 0 {
+	if f.GenerateMapper && f.ArraysCount > 0 {
 		return "[]"
 	}
 
 	if obj == "" {
 		var s strings.Builder
 		if f.Func != "" {
-			fmt.Fprintf(&s, "%s(%s)", f.Func, f.Name)
+			name := f.Name
+			if f.IntermediateType != "" {
+				if f.IntermediateFullType != "" {
+					name = fmt.Sprintf("(%s) as %s", f.Name, f.IntermediateFullType)
+				} else {
+					name = fmt.Sprintf("(%s) as %s", f.Name, f.IntermediateType)
+				}
+			}
+			fmt.Fprintf(&s, "%s(%s)", f.Func, name)
 		} else {
 			fmt.Fprintf(&s, "%s", f.Name)
 		}
@@ -478,7 +543,15 @@ func (f Field) FormatNameValue(obj string) string {
 
 	var s strings.Builder
 	if f.Func != "" {
-		fmt.Fprintf(&s, "%s(%s.%s)", f.Func, obj, f.Name)
+		if f.IntermediateType != "" {
+			if f.IntermediateFullType != "" {
+				fmt.Fprintf(&s, "%s(%s.%s as %s)", f.Func, obj, f.Name, f.IntermediateFullType)
+			} else {
+				fmt.Fprintf(&s, "%s(%s.%s as %s)", f.Func, obj, f.Name, f.IntermediateType)
+			}
+		} else {
+			fmt.Fprintf(&s, "%s(%s.%s)", f.Func, obj, f.Name)
+		}
 	} else {
 		fmt.Fprintf(&s, "%s.%s", obj, f.Name)
 	}
@@ -514,60 +587,92 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 			if fMapping, ok := LanguageMapping[fieldType]["ts"]; ok {
 				realType := fMapping.Type + listsSuffix
 				intermediateType := ""
+				intermediateFullType := ""
+				fullType := ""
+				rawType := ""
 				if fMapping.IntermediateType != "" {
 					intermediateType = fMapping.IntermediateType + listsSuffix
 				}
+				if fMapping.IntermediateFullType != "" {
+					intermediateFullType = fMapping.IntermediateFullType + listsSuffix
+				}
+				if fMapping.FullType != "" {
+					fullType = fMapping.FullType + listsSuffix
+				}
+
+				if fMapping.RawType != "" {
+					rawType = fMapping.RawType + listsSuffix
+				}
 
 				s.Fields = append(s.Fields, Field{
-					Name:                fieldName,
-					Type:                realType,
-					IntermediateType:    intermediateType,
-					Func:                fMapping.Func,
-					Method:              fMapping.Method,
-					ArraysCount:         arraysCount,
-					ArraysCountIterator: aci,
-					FullType:            fMapping.FullType + listsSuffix,
+					Name:                 fieldName,
+					Type:                 realType,
+					IntermediateType:     intermediateType,
+					RawType:              rawType,
+					IntermediateFullType: intermediateFullType,
+					Func:                 fMapping.Func,
+					Method:               fMapping.Method,
+					ArraysCount:          arraysCount,
+					FullType:             fullType,
 				})
 			} else {
 				if structName, ok := newStructsMap[fieldType]; ok {
-					realType := structName + listsSuffix
+					// For custom struct use "Raw" for correct typing
+					realType := structName + "Raw" + listsSuffix
 
 					if fmapping, ok := LanguageMapping[structName]["ts"]; ok {
 						intermediateType := ""
+						intermediateFullType := ""
+						rawType := ""
 						if fMapping.IntermediateType != "" {
 							intermediateType = fMapping.IntermediateType + listsSuffix
 						}
+						if fMapping.IntermediateFullType != "" {
+							intermediateFullType = fMapping.IntermediateFullType + listsSuffix
+						}
+						if fMapping.RawType != "" {
+							rawType = fMapping.RawType + listsSuffix
+						}
+
 						s.Fields = append(s.Fields, Field{
-							Name:                fieldName,
-							Type:                realType,
-							IntermediateType:    intermediateType,
-							Func:                fmapping.Func,
-							Method:              fMapping.Method,
-							ArraysCount:         arraysCount,
-							ArraysCountIterator: aci,
-							FullType:            fMapping.FullType + listsSuffix,
+							Name:                 fieldName,
+							Type:                 realType,
+							FullType:             "types." + realType,
+							IntermediateType:     intermediateType,
+							RawType:              rawType,
+							IntermediateFullType: intermediateFullType,
+							Func:                 fmapping.Func,
+							Method:               fMapping.Method,
+							ArraysCount:          arraysCount,
+							IsCustom:             true,
 						})
 					} else {
 						s.Fields = append(s.Fields, Field{
-							Name:                fieldName,
-							Type:                realType,
-							ArraysCount:         arraysCount,
-							ArraysCountIterator: aci,
+							Name:        fieldName,
+							Type:        realType,
+							FullType:    "types." + realType,
+							ArraysCount: arraysCount,
+							IsCustom:    true,
 						})
 					}
 
 				} else {
 					s.Fields = append(s.Fields, Field{
-						Name:                fieldName,
-						Type:                "unknown" + listsSuffix,
-						ArraysCount:         arraysCount,
-						ArraysCountIterator: aci,
+						Name:        fieldName,
+						Type:        "unknown" + listsSuffix,
+						ArraysCount: arraysCount,
 					})
 				}
 			}
 		}
 
 		ss = append(ss, s)
+	}
+
+	for i := range ss {
+		for j, f := range ss[i].Fields {
+			ss[i].Fields[j].GenerateMapper = f.ArraysCount > 0 && (f.Func != "" || f.Method != "" || f.IntermediateType != "" || f.IsCustom)
+		}
 	}
 
 	return ss
