@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 **What went wrong**
 
 
-**Expected**
+**Expected result**
 
 **Environment**
  - OS: [e.g. MacOS M1]
