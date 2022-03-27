@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/maxifom/eos-abigen/examples/contracts/eosio/go/generated/eosio"
+	"github.com/maxifom/eos-abigen/examples/contracts/eosio/golang/generated/eosio"
 	"github.com/maxifom/eos-abigen/pkg/client"
 )
 
