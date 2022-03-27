@@ -30,3 +30,5 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^Merge pull request'
+      - 'Update issue templates'
+      - '(?i)goreleaser'
