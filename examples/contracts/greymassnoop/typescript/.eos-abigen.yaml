@@ -1,0 +1,4 @@
+generate:
+  folder: generated
+  contracts:
+    - file: contracts/greymassnoop.json

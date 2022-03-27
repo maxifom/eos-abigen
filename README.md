@@ -78,3 +78,6 @@ generate:
     - file: /some/folder/contracts/eosio.json
       name_override: eosio123
 ```
+
+## Examples
+See examples in [examples/contracts folder](./examples/contracts/) for example usage of generated files.

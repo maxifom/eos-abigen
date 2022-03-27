@@ -237,7 +237,7 @@ func (w *TimePoint) UnmarshalJSON(i []byte) error {
 		return nil
 	}
 
-	t, err := time.ParseInLocation("2006-01-02T15:04:05.999", s, time.UTC)
+	t, err := time.ParseInLocation("2006-01-02T15:04:05.999", s[1:len(s)-1], time.UTC)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (w *TimePointSec) UnmarshalJSON(i []byte) error {
 		return nil
 	}
 
-	t, err := time.ParseInLocation("2006-01-02T15:04:05", s, time.UTC)
+	t, err := time.ParseInLocation("2006-01-02T15:04:05", s[1:len(s)-1], time.UTC)
 	if err != nil {
 		return err
 	}

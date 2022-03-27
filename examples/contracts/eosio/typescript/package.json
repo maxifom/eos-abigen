@@ -1,0 +1,14 @@
+{
+  "name": "eosio-ts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^17.0.21",
+    "eosjs": "^22.1.0",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.2"
+  },
+  "dependencies": {
+    "node-fetch": "<3.0.0"
+  }
+}

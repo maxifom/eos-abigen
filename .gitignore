@@ -2,6 +2,7 @@
 /vendor
 /generated
 /contracts
-.eos-abigen.yaml
+/.eos-abigen.yaml
 
 dist/
+node_modules
