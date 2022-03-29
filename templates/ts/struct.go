@@ -3,7 +3,7 @@ package ts
 var StructTemplate = `
 export type {{.Name}} = {
 	{{$lenFields := len .Fields -}}
-	{{ range $i, $f := .Fields -}}{{$f.Name}}: {{$f.Type}}
+	{{ range $i, $f := .Fields -}}{{$f.Name}}{{ if $f.IsNullable }}?{{end}}: {{$f.Type}}
 {{if (lt $i (sub $lenFields 1))}}	{{end}}{{end -}}
 };
 

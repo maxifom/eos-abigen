@@ -287,7 +287,7 @@ func gen(abi abitypes.ABI, contractName string, realContractName string, generat
 func getNewTypesMap(abi abitypes.ABI) map[string]string {
 	newTypesMap := map[string]string{}
 	for _, t := range abi.Types {
-		newTypesMap[t.NewTypeName] = t.Type
+		newTypesMap[DefaultTSCaseFunc(t.NewTypeName)] = t.Type
 	}
 
 	return newTypesMap
@@ -296,7 +296,7 @@ func getNewTypesMap(abi abitypes.ABI) map[string]string {
 func getNewStructsMap(abi abitypes.ABI) map[string]string {
 	newStructsMap := map[string]string{}
 	for _, abiStruct := range abi.Structs {
-		newStructsMap[abiStruct.Name] = DefaultTSCaseFunc(abiStruct.Name)
+		newStructsMap[DefaultTSCaseFunc(abiStruct.Name)] = DefaultTSCaseFunc(abiStruct.Name)
 	}
 
 	return newStructsMap
@@ -309,7 +309,6 @@ type LanguageFieldMapping struct {
 	IntermediateType     string
 	IntermediateFullType string
 	FullType             string
-	RawType              string
 }
 
 var DefaultTSCaseFunc = strcase.UpperCamelCase
@@ -367,7 +366,6 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 			Type:             "string",
 			IntermediateType: "number",
 			Method:           "toString",
-			RawType:          "string | number",
 		},
 	},
 	"uint64": {
@@ -375,7 +373,6 @@ var LanguageMapping = map[string]map[string]LanguageFieldMapping{
 			Type:             "string",
 			IntermediateType: "number",
 			Method:           "toString",
-			RawType:          "string | number",
 		},
 	},
 	"int128": {
@@ -500,12 +497,12 @@ type Field struct {
 	FullType             string
 	IntermediateType     string
 	IntermediateFullType string
-	RawType              string
 	Func                 string
 	Method               string
 	ArraysCount          int
 	IsStruct             bool
 	GenerateMapper       bool
+	IsNullable           bool
 }
 
 type S struct {
@@ -585,22 +582,23 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 			fieldName := strings.ToLower(field.Name)
 			fieldType := field.Type
 			arraysCount := strings.Count(fieldType, "[]")
-			var aci []int
-			for i := 0; i < arraysCount; i++ {
-				aci = append(aci, i)
-			}
-			listsSuffix := strings.Repeat("[]", arraysCount)
+			isNullable := strings.HasSuffix(fieldType, "?")
+			fieldType = strings.ReplaceAll(fieldType, "?", "")
 			fieldType = strings.ReplaceAll(fieldType, "[]", "")
 			if realFieldType, ok := newTypesMap[fieldType]; ok {
 				fieldType = realFieldType
+				isNullable = strings.HasSuffix(fieldType, "?")
+				fieldType = strings.ReplaceAll(fieldType, "?", "")
+				arraysCount += strings.Count(fieldType, "[]")
 			}
+
+			listsSuffix := strings.Repeat("[]", arraysCount)
 
 			if fMapping, ok := LanguageMapping[fieldType]["ts"]; ok {
 				realType := fMapping.Type + listsSuffix
 				intermediateType := ""
 				intermediateFullType := ""
 				fullType := ""
-				rawType := ""
 				if fMapping.IntermediateType != "" {
 					intermediateType = fMapping.IntermediateType + listsSuffix
 				}
@@ -611,47 +609,30 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 					fullType = fMapping.FullType + listsSuffix
 				}
 
-				if fMapping.RawType != "" {
-					splitted := strings.Split(fMapping.RawType, "|")
-					var rawTypes []string
-					for _, s := range splitted {
-						rawTypes = append(rawTypes, strings.TrimSpace(s)+listsSuffix)
-					}
-					rawType = strings.Join(rawTypes, " | ")
-				}
-
 				s.Fields = append(s.Fields, Field{
 					Name:                 fieldName,
 					Type:                 realType,
 					IntermediateType:     intermediateType,
-					RawType:              rawType,
 					IntermediateFullType: intermediateFullType,
 					Func:                 fMapping.Func,
 					Method:               fMapping.Method,
 					ArraysCount:          arraysCount,
 					FullType:             fullType,
+					IsNullable:           isNullable,
 				})
 			} else {
+				fieldType = strcase.UpperCamelCase(fieldType)
 				if structName, ok := newStructsMap[fieldType]; ok {
 					realType := structName + listsSuffix
 
 					if fmapping, ok := LanguageMapping[structName]["ts"]; ok {
 						intermediateType := ""
 						intermediateFullType := ""
-						rawType := ""
 						if fMapping.IntermediateType != "" {
 							intermediateType = fMapping.IntermediateType + listsSuffix
 						}
 						if fMapping.IntermediateFullType != "" {
 							intermediateFullType = fMapping.IntermediateFullType + listsSuffix
-						}
-						if fMapping.RawType != "" {
-							splitted := strings.Split(fmapping.RawType, "|")
-							var rawTypes []string
-							for _, s := range splitted {
-								rawTypes = append(rawTypes, strings.TrimSpace(s)+listsSuffix)
-							}
-							rawType = strings.Join(rawTypes, " | ")
 						}
 
 						s.Fields = append(s.Fields, Field{
@@ -659,12 +640,12 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							Type:                 realType,
 							FullType:             "types." + realType,
 							IntermediateType:     intermediateType,
-							RawType:              rawType,
 							IntermediateFullType: intermediateFullType,
 							Func:                 fmapping.Func,
 							Method:               fMapping.Method,
 							ArraysCount:          arraysCount,
 							IsStruct:             true,
+							IsNullable:           isNullable,
 						})
 					} else {
 						s.Fields = append(s.Fields, Field{
@@ -673,6 +654,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 							FullType:    "types." + realType,
 							ArraysCount: arraysCount,
 							IsStruct:    true,
+							IsNullable:  isNullable,
 						})
 					}
 
@@ -681,6 +663,7 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 						Name:        fieldName,
 						Type:        "unknown" + listsSuffix,
 						ArraysCount: arraysCount,
+						IsNullable:  isNullable,
 					})
 				}
 			}
