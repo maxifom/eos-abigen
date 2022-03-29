@@ -585,10 +585,12 @@ func genStructs(abi abitypes.ABI, newTypesMap map[string]string, newStructsMap m
 			isNullable := strings.HasSuffix(fieldType, "?")
 			fieldType = strings.ReplaceAll(fieldType, "?", "")
 			fieldType = strings.ReplaceAll(fieldType, "[]", "")
+			fieldType = strings.ReplaceAll(fieldType, "$", "")
 			if realFieldType, ok := newTypesMap[fieldType]; ok {
 				fieldType = realFieldType
 				isNullable = strings.HasSuffix(fieldType, "?")
 				fieldType = strings.ReplaceAll(fieldType, "?", "")
+				fieldType = strings.ReplaceAll(fieldType, "$", "")
 				arraysCount += strings.Count(fieldType, "[]")
 			}
 
