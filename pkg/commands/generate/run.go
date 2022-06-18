@@ -30,7 +30,7 @@ func concatQual(q string) string {
 func Run(opts Opts) error {
 	fs := opts.FS
 	if fs == nil {
-		return fmt.Errorf("no fs specified")
+		fs = afero.NewOsFs()
 	}
 
 	contractName := strings.TrimSuffix(filepath.Base(opts.ContractFilePath), filepath.Ext(opts.ContractFilePath))

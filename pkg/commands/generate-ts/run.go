@@ -39,7 +39,7 @@ func generateIBrackets(count int) string {
 func Run(opts Opts) error {
 	fs := opts.FS
 	if fs == nil {
-		return fmt.Errorf("no fs specified")
+		fs = afero.NewOsFs()
 	}
 
 	type StructForNestedArray struct {
