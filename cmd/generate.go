@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/maxifom/eos-abigen/pkg/commands/generate"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -63,6 +64,7 @@ var generateCmd = &cobra.Command{
 				ContractNameOverride: contractNameOverride,
 				GeneratedFolder:      viper.GetString("generate.folder"),
 				Version:              VERSION,
+				FS:                   afero.NewOsFs(),
 			}
 
 			err = generate.Run(opts)
@@ -85,6 +87,7 @@ var generateCmd = &cobra.Command{
 				ContractNameOverride: c.NameOverride,
 				GeneratedFolder:      viper.GetString("generate.folder"),
 				Version:              VERSION,
+				FS:                   afero.NewOsFs(),
 			}
 
 			err = generate.Run(opts)
