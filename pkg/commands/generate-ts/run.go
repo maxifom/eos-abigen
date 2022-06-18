@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/maxifom/eos-abigen/pkg/abitypes"
+	"github.com/spf13/afero"
 
 	"github.com/maxifom/eos-abigen/templates/ts"
 	"github.com/stoewer/go-strcase"
@@ -20,6 +21,7 @@ type Opts struct {
 	ContractNameOverride string
 	GeneratedFolder      string
 	Version              string
+	FS                   afero.Fs
 }
 
 func generateIBrackets(count int) string {
@@ -35,6 +37,11 @@ func generateIBrackets(count int) string {
 }
 
 func Run(opts Opts) error {
+	fs := opts.FS
+	if fs == nil {
+		fs = afero.NewOsFs()
+	}
+
 	type StructForNestedArray struct {
 		F         Field
 		I         int
@@ -127,7 +134,7 @@ func Run(opts Opts) error {
 
 	contractName := strings.TrimSuffix(filepath.Base(opts.ContractFilePath), filepath.Ext(opts.ContractFilePath))
 
-	abiF, err := os.ReadFile(opts.ContractFilePath)
+	abiF, err := afero.ReadFile(fs, opts.ContractFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to read contract file %s: %w", opts.ContractFilePath, err)
 	}
@@ -140,7 +147,7 @@ func Run(opts Opts) error {
 	}
 
 	fPath := filepath.Join(opts.GeneratedFolder, contractName)
-	err = os.MkdirAll(fPath, os.ModePerm)
+	err = fs.MkdirAll(fPath, os.ModePerm)
 	if err != nil {
 		if !os.IsExist(err) {
 			return fmt.Errorf("failed to create output folder %s: %w", fPath, err)
@@ -152,7 +159,7 @@ func Run(opts Opts) error {
 		realContractName = opts.ContractNameOverride
 	}
 
-	return gen(abi, contractName, realContractName, opts.GeneratedFolder, opts.Version, t)
+	return gen(abi, contractName, realContractName, opts.GeneratedFolder, opts.Version, t, fs)
 }
 
 type Struct struct {
@@ -173,26 +180,26 @@ type Action struct {
 	ParamsName string
 }
 
-func gen(abi abitypes.ABI, contractName string, realContractName string, generatedFolder string, version string, t *template.Template) error {
-	typesF, err := os.Create(filepath.Join(generatedFolder, contractName, "types.ts"))
+func gen(abi abitypes.ABI, contractName string, realContractName string, generatedFolder string, version string, t *template.Template, fs afero.Fs) error {
+	typesF, err := fs.Create(filepath.Join(generatedFolder, contractName, "types.ts"))
 	if err != nil {
 		return err
 	}
 	defer typesF.Close()
 
-	indexF, err := os.Create(filepath.Join(generatedFolder, contractName, "index.ts"))
+	indexF, err := fs.Create(filepath.Join(generatedFolder, contractName, "index.ts"))
 	if err != nil {
 		return err
 	}
 	defer indexF.Close()
 
-	clientF, err := os.Create(filepath.Join(generatedFolder, contractName, "client.ts"))
+	clientF, err := fs.Create(filepath.Join(generatedFolder, contractName, "client.ts"))
 	if err != nil {
 		return err
 	}
 	defer clientF.Close()
 
-	actionBuilderF, err := os.Create(filepath.Join(generatedFolder, contractName, "action_builder.ts"))
+	actionBuilderF, err := fs.Create(filepath.Join(generatedFolder, contractName, "action_builder.ts"))
 	if err != nil {
 		return err
 	}
