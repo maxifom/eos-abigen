@@ -7,4 +7,5 @@ var IndexTemplate = strings.TrimSpace(`
 
 export * from "./client";
 export * from "./action_builder";
+export * from "./types";
 `)
