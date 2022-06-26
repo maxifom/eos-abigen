@@ -42,6 +42,10 @@ export class Symbol {
 		this.precision = Number.parseInt(precision);
 		this.symbol_code = symbol_code;
 	}
+
+	public toJSON() {
+        return this.raw;
+    }
 }
 
 export class Asset {
@@ -64,6 +68,10 @@ export class Asset {
 		this.quantity = Number.parseFloat(quantity);
 		this.symbol_code = symbol_code;
 	}
+
+    public toJSON() {
+        return this.raw;
+    }
 }
 
 export type ExtendedAssetType = {
