@@ -1,6 +1,3 @@
-package ts
-
-var StructTemplate = `
 export type {{.Name}} = {
 	{{$lenFields := len .Fields -}}
 	{{ range $i, $f := .Fields -}}{{$f.Name}}: {{$f.Type}}
@@ -20,4 +17,3 @@ export function map{{.Name}}(r: {{.Name}}Interm): {{.Name}} {
 {{- end -}}			
 {{generateTabs 1 -}} }
 }
-`
