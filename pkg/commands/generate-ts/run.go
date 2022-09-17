@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/maxifom/eos-abigen/pkg/abitypes"
 	"github.com/spf13/afero"
 
-	"github.com/maxifom/eos-abigen/templates/ts"
 	"github.com/stoewer/go-strcase"
 )
 
@@ -36,6 +36,9 @@ func generateIBrackets(count int) string {
 	return s.String()
 }
 
+//go:embed templates/ts/*.gotmpl
+var templatesFs embed.FS
+
 func Run(opts Opts) error {
 	fs := opts.FS
 	if fs == nil {
@@ -53,6 +56,11 @@ func Run(opts Opts) error {
 		IsLast       bool
 		UseFullTypes bool
 		Tabs         int
+	}
+
+	clientTemplate, err := templatesFs.ReadFile("templates/ts/client.gotmpl")
+	if err != nil {
+		return err
 	}
 
 	t, err := template.New("client").Funcs(sprig.TxtFuncMap()).Funcs(map[string]any{
@@ -103,31 +111,65 @@ func Run(opts Opts) error {
 
 			return s
 		},
-	}).Parse(ts.ClientTemplate)
+	}).Parse(string(clientTemplate))
 	if err != nil {
 		return err
 	}
-	t, err = t.New("index").Parse(ts.IndexTemplate)
+
+	indexTemplate, err := templatesFs.ReadFile("templates/ts/index.gotmpl")
 	if err != nil {
 		return err
 	}
-	t, err = t.New("struct").Parse(ts.StructTemplate)
+
+	t, err = t.New("index").Parse(string(indexTemplate))
 	if err != nil {
 		return err
 	}
-	t, err = t.New("table_rows").Parse(ts.TableRowsTemplate)
+
+	structTemplate, err := templatesFs.ReadFile("templates/ts/struct.gotmpl")
 	if err != nil {
 		return err
 	}
-	t, err = t.New("types").Parse(ts.TypesTemplate)
+
+	t, err = t.New("struct").Parse(string(structTemplate))
 	if err != nil {
 		return err
 	}
-	t, err = t.New("action_builder").Parse(ts.ActionBuilderTemplate)
+
+	tableRowsTemplate, err := templatesFs.ReadFile("templates/ts/table_rows.gotmpl")
 	if err != nil {
 		return err
 	}
-	t, err = t.New("map_field").Parse(ts.MapFieldTemplate)
+
+	t, err = t.New("table_rows").Parse(string(tableRowsTemplate))
+	if err != nil {
+		return err
+	}
+
+	typesTemplate, err := templatesFs.ReadFile("templates/ts/types.gotmpl")
+	if err != nil {
+		return err
+	}
+
+	t, err = t.New("types").Parse(string(typesTemplate))
+	if err != nil {
+		return err
+	}
+
+	actionBuilderTemplate, err := templatesFs.ReadFile("templates/ts/action_builder.gotmpl")
+	if err != nil {
+		return err
+	}
+	t, err = t.New("action_builder").Parse(string(actionBuilderTemplate))
+	if err != nil {
+		return err
+	}
+
+	fieldMapperTemplate, err := templatesFs.ReadFile("templates/ts/field_mapper.gotmpl")
+	if err != nil {
+		return err
+	}
+	t, err = t.New("map_field").Parse(string(fieldMapperTemplate))
 	if err != nil {
 		return err
 	}
